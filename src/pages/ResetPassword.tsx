@@ -71,7 +71,7 @@ const ResetPassword = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <a href="/" className="text-3xl font-extrabold font-heading text-foreground tracking-tight">
-            Kis<span className="text-accent">X</span>
+            Kis<span className="text-accent">X</span>Cars
           </a>
           <p className="text-muted-foreground mt-2">Set your new password</p>
         </div>
