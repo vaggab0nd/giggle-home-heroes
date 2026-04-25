@@ -42,7 +42,7 @@ const Navbar = ({ variant = "transparent" }: NavbarProps) => {
     <nav className={`${isSolid ? "bg-foreground" : "absolute top-0 left-0 right-0"} z-20 px-4`}>
       <div className="max-w-7xl mx-auto flex items-center justify-between h-16">
         <a href="/" className="flex items-center" aria-label="KisXCars home">
-          {/* Dark-bg logo (white text) — shown on the standard nav */}
+          {/* Light-text logo for dark navbar backgrounds (default + dark mode) */}
           <img
             src={logoSrc}
             alt="KisXCars"
@@ -50,17 +50,14 @@ const Navbar = ({ variant = "transparent" }: NavbarProps) => {
             height={512}
             className="h-8 w-auto block dark:hidden"
           />
-          {/* Same white-text logo works in dark mode too (still on dark bg) */}
           <img
-            src={logoSrc}
+            src={logoSrcLight}
             alt=""
             aria-hidden="true"
             width={1536}
             height={512}
             className="h-8 w-auto hidden dark:block"
           />
-          {/* Preload the light variant so theme swaps are instant where used */}
-          <link rel="preload" as="image" href={logoSrcLight} />
         </a>
 
         {/* Desktop links */}
