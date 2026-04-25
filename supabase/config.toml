@@ -1,0 +1,7 @@
+project_id = "szpgcvfemllcsajryyuv"
+
+[functions.analyse-photos]
+verify_jwt = false
+
+[functions.analyse-breakdown]
+verify_jwt = false

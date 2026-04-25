@@ -1,0 +1,115 @@
+/* Fonts loaded via preload in index.html to avoid render-blocking */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 220 20% 14%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 14%;
+
+    --primary: 191 85% 43%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 220 20% 14%;
+
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 14% 50%;
+
+    --accent: 35 95% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 20% 90%;
+    --input: 214 20% 90%;
+    --ring: 191 85% 43%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 191 85% 43%;
+
+    --success: 152 60% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --font-heading: 'Plus Jakarta Sans', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  .dark {
+    --background: 220 20% 8%;
+    --foreground: 210 20% 96%;
+    --card: 220 20% 12%;
+    --card-foreground: 210 20% 96%;
+    --popover: 220 20% 12%;
+    --popover-foreground: 210 20% 96%;
+    --primary: 191 85% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 20% 18%;
+    --secondary-foreground: 210 20% 96%;
+    --muted: 217 20% 18%;
+    --muted-foreground: 215 14% 60%;
+    --accent: 35 95% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 20% 96%;
+    --border: 217 20% 20%;
+    --input: 217 20% 20%;
+    --ring: 191 85% 48%;
+    --sidebar-background: 220 20% 10%;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 191 85% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 20% 15%;
+    --sidebar-accent-foreground: 210 20% 90%;
+    --sidebar-border: 220 20% 15%;
+    --sidebar-ring: 191 85% 48%;
+    --success: 152 60% 42%;
+    --success-foreground: 0 0% 100%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+/* Subtle page background for inner pages */
+.page-bg {
+  background:
+    radial-gradient(ellipse at 20% 0%, hsl(var(--primary) / 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, hsl(var(--accent) / 0.04) 0%, transparent 50%),
+    hsl(var(--secondary));
+}
+
+.dark .page-bg {
+  background:
+    radial-gradient(ellipse at 20% 0%, hsl(var(--primary) / 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, hsl(var(--accent) / 0.04) 0%, transparent 50%),
+    hsl(var(--background));
+}

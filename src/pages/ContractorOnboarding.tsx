@@ -1,0 +1,441 @@
+import { useState, useCallback, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import {
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  Wrench,
+  Zap,
+  Droplets,
+  Home,
+  Paintbrush,
+  Hammer,
+  Thermometer,
+  HardHat,
+  MapPin,
+  Loader2,
+  ShieldCheck,
+  ShieldAlert,
+  Search,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+
+const EXPERTISE_OPTIONS = [
+  { label: "Plumbing", icon: Droplets, description: "Pipes, fixtures & water systems" },
+  { label: "Electrical", icon: Zap, description: "Wiring, panels & lighting" },
+  { label: "Structural", icon: HardHat, description: "Foundations, framing & load-bearing" },
+  { label: "Damp & Waterproofing", icon: Droplets, description: "Moisture control & sealing" },
+  { label: "Roofing", icon: Home, description: "Shingles, flashing & gutters" },
+  { label: "General Contracting", icon: Hammer, description: "Full-service builds & renovations" },
+  { label: "HVAC", icon: Thermometer, description: "Heating, cooling & ventilation" },
+  { label: "Painting & Finishing", icon: Paintbrush, description: "Interior & exterior finishes" },
+];
+
+const ContractorOnboarding = () => {
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [step, setStep] = useState(1);
+
+  // Redirect unauthenticated visitors to sign in, then return here
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/auth?next=/contractor/signup", { replace: true });
+    }
+  }, [user, authLoading, navigate]);
+  const [saving, setSaving] = useState(false);
+
+  const [businessName, setBusinessName] = useState("");
+  const [postcode, setPostcode] = useState("");
+  const [zipLocation, setZipLocation] = useState("");
+  const [zipLoading, setZipLoading] = useState(false);
+  const [phone, setPhone] = useState("");
+
+  // CSLB licence
+  const [licenceNumber, setLicenceNumber] = useState("");
+  const [licenceLoading, setLicenceLoading] = useState(false);
+  const [licenceError, setLicenceError] = useState<string | null>(null);
+  const [licenceData, setLicenceData] = useState<{
+    licence_number: string;
+    business_name: string;
+    primary_status: string;
+    is_active: boolean;
+    expiration_date: string | null;
+    classifications: string | null;
+  } | null>(null);
+
+  const [expertise, setExpertise] = useState<string[]>([]);
+
+  const lookupZip = useCallback(async (code: string) => {
+    if (!/^\d{5}$/.test(code)) return;
+    setZipLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("zip-lookup", { body: { zip: code } });
+      if (!error && data?.city) {
+        setZipLocation(`${data.city}, ${data.state}`);
+      } else {
+        setZipLocation("");
+      }
+    } catch {
+      setZipLocation("");
+    } finally {
+      setZipLoading(false);
+    }
+  }, []);
+
+  const handleZipChange = (val: string) => {
+    const cleaned = val.replace(/\D/g, "").slice(0, 5);
+    setPostcode(cleaned);
+    setZipLocation("");
+    if (cleaned.length === 5) lookupZip(cleaned);
+  };
+
+  const toggleExpertise = (label: string) => {
+    setExpertise((prev) =>
+      prev.includes(label) ? prev.filter((e) => e !== label) : [...prev, label]
+    );
+  };
+
+  // Generous validation — blocks obviously bad/malicious input only
+  const validateStep1 = (): string | null => {
+    const name = businessName.trim();
+    if (name.length < 2) return "Business name must be at least 2 characters.";
+    if (name.length > 100) return "Business name must be under 100 characters.";
+    if (!/^\d{5}$/.test(postcode.trim())) return "Please enter a valid 5-digit ZIP code.";
+    const ph = phone.trim().replace(/[\s\-().+]/g, "");
+    if (!/^\d{7,15}$/.test(ph)) return "Please enter a valid phone number.";
+    return null;
+  };
+
+  const isStep1Valid = businessName.trim().length >= 2 && /^\d{5}$/.test(postcode) && phone.trim().length >= 7;
+
+  const handleStep1Continue = () => {
+    const err = validateStep1();
+    if (err) { toast({ title: "Please check your details", description: err, variant: "destructive" }); return; }
+    setStep(2);
+  };
+
+  const verifyLicence = async () => {
+    setLicenceError(null);
+    setLicenceData(null);
+    const trimmed = licenceNumber.trim();
+    if (!trimmed) { setLicenceError("Please enter a licence number"); return; }
+    if (!/^\d+$/.test(trimmed)) { setLicenceError("CSLB licence numbers are numeric (e.g. 1000002)"); return; }
+
+    setLicenceLoading(true);
+    try {
+      const { data, error } = await supabase.rpc("lookup_cslb_licence", { p_licence_number: trimmed });
+      if (error) {
+        setLicenceError(error.message);
+      } else if (!data) {
+        setLicenceError(`No CSLB licence found for ${trimmed}`);
+      } else {
+        const d = data as any;
+        setLicenceData({
+          licence_number: d.licence_number,
+          business_name: d.business_name,
+          primary_status: d.primary_status,
+          is_active: d.is_active,
+          expiration_date: d.expiration_date,
+          classifications: d.classifications,
+        });
+        // Auto-fill business name if empty
+        if (!businessName.trim() && d.business_name) {
+          setBusinessName(d.business_name);
+        }
+        toast({
+          title: d.is_active ? "Licence verified ✓" : "Licence found",
+          description: d.is_active
+            ? `${d.business_name} — ${d.primary_status}`
+            : `Status: ${d.primary_status}. You can still continue.`,
+        });
+      }
+    } catch (e) {
+      setLicenceError(e instanceof Error ? e.message : "Lookup failed");
+    } finally {
+      setLicenceLoading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!user) {
+      toast({ title: "You must be signed in to create a contractor profile.", variant: "destructive" });
+      return;
+    }
+    if (expertise.length === 0) {
+      toast({ title: "Select at least one expertise", variant: "destructive" });
+      return;
+    }
+
+    setSaving(true);
+
+    const { data: inserted, error } = await supabase
+      .from("contractors" as any)
+      .insert({
+        user_id: user.id,
+        business_name: businessName.trim(),
+        postcode: postcode.trim(),
+        phone: phone.trim(),
+        expertise,
+        license_number: licenceData?.licence_number || (licenceNumber.trim() || null),
+      } as any)
+      .select("id")
+      .single();
+
+    if (error) {
+      setSaving(false);
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    // Save CSLB verification details if we have them
+    if (licenceData && inserted) {
+      const contractorId = (inserted as any).id;
+      await supabase.from("contractor_details" as any).upsert({
+        id: contractorId,
+        cslb_licence_number: licenceData.licence_number,
+        licence_status: licenceData.primary_status,
+        licence_verified_at: new Date().toISOString(),
+      } as any, { onConflict: "id" });
+    }
+
+    setSaving(false);
+    toast({ title: "Welcome aboard! 🎉", description: "Your contractor profile has been created." });
+    navigate(user ? "/dashboard" : "/");
+  };
+
+  return (
+    <div className="min-h-screen bg-secondary flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-xl">
+        <div className="text-center mb-8">
+          <a href="/" className="text-3xl font-extrabold font-heading text-foreground tracking-tight">
+            Kis<span className="text-accent">X</span>
+          </a>
+          <div className="flex items-center gap-2 justify-center mt-3">
+            <Wrench className="w-4 h-4 text-primary" />
+            <span className="text-sm font-semibold text-primary uppercase tracking-widest">
+              Contractor Sign Up
+            </span>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <div className="flex justify-between text-xs font-medium text-muted-foreground mb-2">
+            <span className={step >= 1 ? "text-primary" : ""}>1 · Business Info</span>
+            <span className={step >= 2 ? "text-primary" : ""}>2 · Your Expertise</span>
+          </div>
+          <Progress value={step === 1 ? 50 : 100} className="h-1.5" />
+        </div>
+
+        <Card className="border-border shadow-lg">
+          <CardContent className="p-8">
+            {step === 1 && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-heading font-bold text-foreground">
+                    Let's get you set up
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Tell us a bit about your business.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  {/* CSLB Licence Lookup */}
+                  <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                    <div>
+                      <Label htmlFor="licence" className="flex items-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4 text-primary" />
+                        CSLB Licence Number
+                        <span className="text-xs text-muted-foreground font-normal">(optional but recommended)</span>
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Verify your California licence to auto-fill your business name and earn a verified badge.
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        id="licence"
+                        value={licenceNumber}
+                        onChange={(e) => {
+                          setLicenceNumber(e.target.value);
+                          setLicenceError(null);
+                          setLicenceData(null);
+                        }}
+                        placeholder="e.g. 1000002"
+                        inputMode="numeric"
+                        disabled={licenceLoading}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={verifyLicence}
+                        disabled={licenceLoading || !licenceNumber.trim()}
+                        className="shrink-0"
+                      >
+                        {licenceLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                        Verify
+                      </Button>
+                    </div>
+                    {licenceError && (
+                      <div className="flex items-start gap-2 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-md p-2">
+                        <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+                        <span>{licenceError}</span>
+                      </div>
+                    )}
+                    {licenceData && (
+                      <div className="rounded-md border bg-card p-3 space-y-1.5">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <span className="font-semibold text-sm">{licenceData.business_name}</span>
+                          <Badge
+                            className={
+                              licenceData.is_active
+                                ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-100"
+                                : "bg-red-100 text-red-800 border-red-300 hover:bg-red-100"
+                            }
+                          >
+                            {licenceData.is_active ? <ShieldCheck className="w-3 h-3 mr-1" /> : <ShieldAlert className="w-3 h-3 mr-1" />}
+                            {licenceData.primary_status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Licence #{licenceData.licence_number}
+                          {licenceData.expiration_date && <> · Expires {new Date(licenceData.expiration_date).toLocaleDateString()}</>}
+                        </p>
+                        {licenceData.classifications && (
+                          <p className="text-xs text-muted-foreground">Classes: {licenceData.classifications}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="businessName">Business Name</Label>
+                    <Input
+                      id="businessName"
+                      value={businessName}
+                      onChange={(e) => setBusinessName(e.target.value)}
+                      placeholder="e.g. Smith & Sons Plumbing"
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="postcode">ZIP / Postcode</Label>
+                      <div className="relative mt-1.5">
+                        <Input
+                          id="postcode"
+                          value={postcode}
+                          onChange={(e) => handleZipChange(e.target.value)}
+                          placeholder="90210"
+                          inputMode="numeric"
+                          maxLength={5}
+                        />
+                        {zipLoading && (
+                          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+                        )}
+                      </div>
+                      {zipLocation && (
+                        <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                          <MapPin className="w-3 h-3 text-primary" />
+                          <span>{zipLocation}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input
+                        id="phone"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="(555) 123-4567"
+                        className="mt-1.5"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  className="w-full gap-2"
+                  onClick={handleStep1Continue}
+                  disabled={!isStep1Valid}
+                >
+                  Continue <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-heading font-bold text-foreground">
+                    Select your expertise
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Choose all the trades you cover. You can update these later.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {EXPERTISE_OPTIONS.map((opt) => {
+                    const selected = expertise.includes(opt.label);
+                    return (
+                      <button
+                        key={opt.label}
+                        onClick={() => toggleExpertise(opt.label)}
+                        className={`relative flex flex-col items-start gap-1.5 p-4 rounded-xl border-2 text-left transition-all duration-150 ${
+                          selected
+                            ? "border-primary bg-primary/5 shadow-sm"
+                            : "border-border bg-card hover:border-primary/40"
+                        }`}
+                      >
+                        {selected && (
+                          <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                            <Check className="w-3 h-3 text-primary-foreground" />
+                          </div>
+                        )}
+                        <opt.icon className={`w-5 h-5 ${selected ? "text-primary" : "text-muted-foreground"}`} />
+                        <span className="text-sm font-semibold text-foreground">{opt.label}</span>
+                        <span className="text-xs text-muted-foreground leading-tight">{opt.description}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setStep(1)} className="gap-1">
+                    <ArrowLeft className="w-4 h-4" /> Back
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={handleSubmit}
+                    disabled={saving || expertise.length === 0}
+                  >
+                    {saving ? "Creating Profile..." : "Complete Sign Up"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <p className="text-center text-xs text-muted-foreground mt-6">
+          Already have an account?{" "}
+          <a href="/auth" className="text-primary hover:underline font-medium">
+            Sign in
+          </a>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default ContractorOnboarding;
