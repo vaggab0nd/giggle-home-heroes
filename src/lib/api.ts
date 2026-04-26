@@ -173,6 +173,10 @@ export interface Bid {
 // ─── API client ───────────────────────────────────────────────────────────────
 
 export const api = {
+  vertical: {
+    get: () => publicRequest<VerticalConfig>("/api/vertical"),
+  },
+
   jobs: {
     create: (analysisResult: Record<string, unknown>) =>
       request<Job>("/jobs", {
