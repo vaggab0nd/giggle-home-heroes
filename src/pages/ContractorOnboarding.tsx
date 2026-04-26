@@ -369,11 +369,11 @@ const ContractorOnboarding = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  {EXPERTISE_OPTIONS.map((opt) => {
+                  {categories.map((opt) => {
                     const selected = expertise.includes(opt.label);
                     return (
                       <button
-                        key={opt.label}
+                        key={opt.value}
                         onClick={() => toggleExpertise(opt.label)}
                         className={`relative flex flex-col items-start gap-1.5 p-4 rounded-xl border-2 text-left transition-all duration-150 ${
                           selected
@@ -386,9 +386,12 @@ const ContractorOnboarding = () => {
                             <Check className="w-3 h-3 text-primary-foreground" />
                           </div>
                         )}
-                        <opt.icon className={`w-5 h-5 ${selected ? "text-primary" : "text-muted-foreground"}`} />
+                        {opt.icon ? (
+                          <span className="text-2xl leading-none" aria-hidden>{opt.icon}</span>
+                        ) : (
+                          <Wrench className={`w-5 h-5 ${selected ? "text-primary" : "text-muted-foreground"}`} />
+                        )}
                         <span className="text-sm font-semibold text-foreground">{opt.label}</span>
-                        <span className="text-xs text-muted-foreground leading-tight">{opt.description}</span>
                       </button>
                     );
                   })}
