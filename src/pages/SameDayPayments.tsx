@@ -22,40 +22,40 @@ const paymentSteps = [
     icon: CheckCircle2,
     title: "Bid accepted",
     description:
-      "You accept a contractor's bid. The agreed amount is charged to your card and held securely — not yet released to anyone.",
+      "You accept a garage's quote. The agreed amount is charged to your card and held securely — not yet released to anyone.",
   },
   {
     icon: Lock,
     title: "Funds held in escrow",
     description:
-      "Money sits in a protected escrow account powered by Stripe. The contractor can see it's there; no one can touch it until the job is done.",
+      "Money sits in a protected escrow account powered by Stripe. The garage can see it's there; no one can touch it until the work is done.",
   },
   {
     icon: Zap,
-    title: "Work gets done",
+    title: "Repairs get done",
     description:
-      "The contractor completes the project. You review it in the app, leave feedback, and confirm you're satisfied.",
+      "The garage completes the repair. You inspect the car, review the work in the app, leave feedback, and confirm you're satisfied.",
   },
   {
     icon: Banknote,
     title: "You release payment",
     description:
-      "One tap releases the funds. Stripe routes the money directly to the contractor's verified bank account.",
+      "One tap releases the funds. Stripe routes the money directly to the garage's verified bank account.",
   },
   {
     icon: Clock,
-    title: "Contractor paid same day",
+    title: "Garage paid same day",
     description:
-      "The payout lands in the contractor's account the same day — often within minutes. No chasing invoices, no waiting weeks.",
+      "The payout lands in the garage's account the same day — often within minutes. No chasing invoices, no waiting weeks.",
   },
 ];
 
-const homeownerBenefits = [
+const ownerBenefits = [
   {
     icon: ShieldCheck,
     title: "Your money is protected",
     description:
-      "Funds are never released until you confirm the work is complete. You are always in control.",
+      "Funds are never released until you confirm the repair is complete and the car is back in your hands. You are always in control.",
   },
   {
     icon: RefreshCw,
@@ -65,24 +65,24 @@ const homeownerBenefits = [
   },
   {
     icon: BadgeCheck,
-    title: "Stripe-verified contractors",
+    title: "Stripe-verified garages",
     description:
-      "Every contractor completes Stripe's identity verification before they can receive a single payment. No anonymous tradespeople.",
+      "Every garage completes Stripe's identity verification before they can receive a single payment. No anonymous workshops.",
   },
   {
     icon: AlertCircle,
     title: "No surprise charges",
     description:
-      "You see the full amount upfront when you accept a bid. That amount is fixed — no add-ons after the job is done without your approval.",
+      "You see the full amount upfront when you accept a quote. That amount is fixed — no add-ons after the work is done without your approval.",
   },
 ];
 
-const contractorBenefits = [
+const garageBenefits = [
   {
     icon: Zap,
     title: "Same-day payouts",
     description:
-      "As soon as the homeowner approves the work, the payment is on its way. Typical arrival: same business day.",
+      "As soon as the vehicle owner approves the work, the payment is on its way. Typical arrival: same business day.",
   },
   {
     icon: Building2,
@@ -94,13 +94,13 @@ const contractorBenefits = [
     icon: Wallet,
     title: "Full earnings transparency",
     description:
-      "See exactly what you'll receive before you bid — platform fee shown clearly. No hidden deductions.",
+      "See exactly what you'll receive before you quote — platform fee shown clearly. No hidden deductions.",
   },
   {
     icon: Lock,
     title: "Guaranteed payment",
     description:
-      "Funds are already held in escrow before you start work. You'll never complete a job and discover the customer can't pay.",
+      "Funds are already held in escrow before you lift a spanner. You'll never finish a repair and discover the customer can't pay.",
   },
 ];
 
@@ -115,7 +115,7 @@ const trustItems = [
   },
   {
     label: "KYC verified",
-    detail: "Every contractor passes Stripe's identity and bank verification",
+    detail: "Every garage passes Stripe's identity and bank verification",
   },
   {
     label: "PCI DSS compliant",
@@ -140,15 +140,15 @@ const SameDayPayments = () => (
         </h1>
         <p className="text-primary-foreground/70 text-lg max-w-xl mx-auto mb-8 leading-relaxed">
           KisXCars combines Stripe's world-class payment infrastructure with escrow
-          protection — so homeowners only pay when they're satisfied, and
-          contractors never wait weeks for their money.
+          protection — so vehicle owners only pay when their car is fixed and
+          they're satisfied, and garages never wait weeks for their money.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button asChild size="lg" className="h-12 px-8">
-            <Link to="/contractor/signup">Join as a Contractor</Link>
+            <Link to="/contractor/signup">Join as a Garage</Link>
           </Button>
           <Button asChild variant="outline" size="lg" className="h-12 px-8 border-primary-foreground/60 text-primary-foreground bg-primary-foreground/10 hover:bg-primary-foreground/20">
-            <Link to="/post-project">Post a Project</Link>
+            <Link to="/post-project">Post a Repair</Link>
           </Button>
         </div>
       </div>
@@ -161,7 +161,7 @@ const SameDayPayments = () => (
           How the money flows
         </h2>
         <p className="text-center text-muted-foreground mb-14 max-w-lg mx-auto">
-          Escrow means both sides are protected at every step. Here's exactly what happens from bid to bank account.
+          Escrow means both sides are protected at every step. Here's exactly what happens from quote to bank account.
         </p>
 
         <div className="relative flex flex-col gap-0">
@@ -194,12 +194,12 @@ const SameDayPayments = () => (
       </div>
     </section>
 
-    {/* Homeowner benefits */}
+    {/* Vehicle owner benefits */}
     <section className="py-20 px-4 bg-secondary">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-extrabold font-heading text-foreground mb-3">
-            For homeowners — pay with confidence
+            For vehicle owners — pay with confidence
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
             Your money never leaves escrow until you say so. You're protected
@@ -207,7 +207,7 @@ const SameDayPayments = () => (
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {homeownerBenefits.map((b) => (
+          {ownerBenefits.map((b) => (
             <div
               key={b.title}
               className="bg-card rounded-xl p-7 border border-border shadow-sm"
@@ -227,20 +227,20 @@ const SameDayPayments = () => (
       </div>
     </section>
 
-    {/* Contractor benefits */}
+    {/* Garage benefits */}
     <section className="py-20 px-4 bg-background">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-extrabold font-heading text-foreground mb-3">
-            For contractors — fast, guaranteed pay
+            For garages — fast, guaranteed pay
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Finish the job, get approved, get paid. No invoices, no chasing,
+            Finish the repair, get approved, get paid. No invoices, no chasing,
             no waiting until Friday.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {contractorBenefits.map((b) => (
+          {garageBenefits.map((b) => (
             <div
               key={b.title}
               className="bg-card rounded-xl p-7 border border-border shadow-sm"
@@ -267,11 +267,11 @@ const SameDayPayments = () => (
           How fast is same-day?
         </h2>
         <p className="text-primary-foreground/80 mb-10 max-w-lg mx-auto">
-          Once the homeowner taps "Release Payment", Stripe processes the transfer immediately.
+          Once the vehicle owner taps "Release Payment", Stripe processes the transfer immediately.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { time: "Minutes", label: "Instant payout", note: "Available to eligible contractors" },
+            { time: "Minutes", label: "Instant payout", note: "Available to eligible garages" },
             { time: "Same day", label: "Standard payout", note: "For most UK bank accounts" },
             { time: "1–2 days", label: "Fallback", note: "Some banks or international accounts" },
           ].map((t) => (
@@ -323,13 +323,13 @@ const SameDayPayments = () => (
           Ready to get started?
         </h2>
         <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-          Homeowners post projects for free. Contractors sign up and connect
+          Vehicle owners post repair jobs for free. Garages sign up and connect
           their bank account in under five minutes.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button asChild size="lg" className="h-12 px-8">
             <Link to="/contractor/signup">
-              Set up contractor payments <ArrowRight className="w-4 h-4 ml-1" />
+              Set up garage payments <ArrowRight className="w-4 h-4 ml-1" />
             </Link>
           </Button>
           <Button asChild variant="outline" size="lg" className="h-12 px-8">
