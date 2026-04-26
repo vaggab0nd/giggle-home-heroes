@@ -214,7 +214,7 @@ const TradePhotoAnalyzer = () => {
                     <SelectItem value="_auto">Auto-detect (optional)</SelectItem>
                     {categories.map((cat) => (
                       <SelectItem key={cat.value} value={cat.value}>
-                        {cat.value === "auto" ? cat.label : `${categoryIcon(cat)} ${cat.label}`}
+                        {`${categoryIcon(cat)} ${cat.label}`}
                       </SelectItem>
                     ))}
                   </SelectContent>
