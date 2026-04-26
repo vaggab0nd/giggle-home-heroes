@@ -12,7 +12,7 @@ const Setup = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { categories } = useVertical();
+  const { categories, categoryIcon } = useVertical();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
 
@@ -169,7 +169,7 @@ const Setup = () => {
                         : "border-border bg-card text-foreground hover:border-primary/50"
                     }`}
                   >
-                    {cat.icon && <span>{cat.icon}</span>}
+                    <span aria-hidden>{categoryIcon(cat)}</span>
                     {cat.label}
                   </button>
                 ))}
