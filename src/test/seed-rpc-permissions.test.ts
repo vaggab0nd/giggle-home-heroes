@@ -114,6 +114,9 @@ describe("seed RPC functions are locked down", () => {
             if (entry.name === "test" || entry.name === "node_modules") continue;
             walk(full);
           } else if (/\.(ts|tsx)$/.test(entry.name)) {
+            // Skip auto-generated Supabase type definitions — they enumerate
+            // every DB function for typing purposes but never invoke them.
+            if (full.endsWith("/integrations/supabase/types.ts")) continue;
             const contents = fs.readFileSync(full, "utf8");
             for (const fn of SEED_FUNCTIONS) {
               if (contents.includes(fn)) offenders.push(`${full} → ${fn}`);
