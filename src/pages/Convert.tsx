@@ -235,7 +235,8 @@ const Convert = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <Card className="w-full max-w-xl">
+      <div className="w-full max-w-5xl space-y-8">
+      <Card className="w-full max-w-xl mx-auto">
         <CardHeader>
           <CardTitle className="text-2xl">Spotify → Apple Music</CardTitle>
           <CardDescription>
@@ -305,6 +306,71 @@ const Convert = () => {
           )}
         </CardContent>
       </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="overflow-hidden border-primary/10">
+          <CardHeader className="bg-gradient-to-br from-primary/10 to-transparent">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center">
+                <Download className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Get a playlist CSV</CardTitle>
+                <CardDescription>Export from Spotify</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <ol className="space-y-4">
+              {[
+                <>Go to <a href="https://exportify.net" target="_blank" rel="noreferrer" className="text-primary font-medium hover:underline">exportify.net</a></>,
+                <>Log in with Spotify</>,
+                <>Click <span className="font-medium">Export</span> next to a playlist</>,
+                <>Save the <code className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono">.csv</code> file</>,
+              ].map((text, i) => (
+                <li key={i} className="flex gap-3 text-sm">
+                  <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center">
+                    {i + 1}
+                  </span>
+                  <span className="text-foreground/90 leading-6">{text}</span>
+                </li>
+              ))}
+            </ol>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden border-primary/10">
+          <CardHeader className="bg-gradient-to-br from-primary/10 to-transparent">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center">
+                <Music className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Import into Apple Music</CardTitle>
+                <CardDescription>On your Mac</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <ol className="space-y-4">
+              {[
+                <>Use this tool to produce <code className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono">output.xml</code></>,
+                <>Open <span className="font-medium">Apple Music</span> on Mac</>,
+                <>Choose <span className="font-medium">File → Library → Import Playlist</span></>,
+                <>Select <code className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono">output.xml</code></>,
+              ].map((text, i) => (
+                <li key={i} className="flex gap-3 text-sm">
+                  <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary text-primary-foreground text-xs font-semibold flex items-center justify-center">
+                    {i + 1}
+                  </span>
+                  <span className="text-foreground/90 leading-6">{text}</span>
+                </li>
+              ))}
+            </ol>
+          </CardContent>
+        </Card>
+      </div>
+      </div>
     </div>
   );
 };
