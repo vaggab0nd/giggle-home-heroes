@@ -2,7 +2,11 @@ import { useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Upload, FileText, Check, Download, Music } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Upload, FileText, Check, Download, Music, ChevronDown } from "lucide-react";
 
 // Hidden page — not linked anywhere. Pure client-side Spotify CSV → Apple Music XML converter.
 
@@ -178,11 +182,26 @@ const Convert = () => {
   const [error, setError] = useState<string | null>(null);
   const [successCount, setSuccessCount] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  const [enrich, setEnrich] = useState(true);
+  const [enrichState, setEnrichState] = useState<
+    | { phase: "idle" }
+    | { phase: "enriching"; current: number; total: number; trackName: string }
+    | {
+        phase: "ready";
+        tracks: Track[];
+        playlistName: string;
+        updated: number;
+        unchanged: number;
+        notFound: number;
+        diffs: { before: Track; after: Track }[];
+      }
+  >({ phase: "idle" });
   const inputRef = useRef<HTMLInputElement>(null);
 
   const onPickFile = (f: File | null | undefined) => {
     setError(null);
     setSuccessCount(null);
+    setEnrichState({ phase: "idle" });
     if (!f) return;
     if (!/\.csv$/i.test(f.name)) {
       setError("Please select a .csv file");
@@ -198,6 +217,19 @@ const Convert = () => {
     onPickFile(f);
   }, []);
 
+  const downloadXml = (name: string, tracks: Track[]) => {
+    const xml = buildXml(name, tracks);
+    const blob = new Blob([xml], { type: "application/xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "output.xml";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const onConvert = async () => {
     if (!file) {
       setError("Choose a CSV file first");
@@ -206,6 +238,7 @@ const Convert = () => {
     setBusy(true);
     setError(null);
     setSuccessCount(null);
+    setEnrichState({ phase: "idle" });
     try {
       const text = await file.text();
       const tracks = csvToTracks(text);
@@ -215,17 +248,87 @@ const Convert = () => {
         return;
       }
       const name = playlistName.trim() || file.name.replace(/\.csv$/i, "");
-      const xml = buildXml(name, tracks);
-      const blob = new Blob([xml], { type: "application/xml" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "output.xml";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      setSuccessCount(tracks.length);
+
+      if (!enrich) {
+        downloadXml(name, tracks);
+        setSuccessCount(tracks.length);
+        setBusy(false);
+        return;
+      }
+
+      // Enrichment phase
+      const enriched: Track[] = [];
+      const diffs: { before: Track; after: Track }[] = [];
+      let updated = 0;
+      let unchanged = 0;
+      let notFound = 0;
+
+      for (let i = 0; i < tracks.length; i++) {
+        const t = tracks[i];
+        setEnrichState({
+          phase: "enriching",
+          current: i + 1,
+          total: tracks.length,
+          trackName: t.name,
+        });
+
+        let nextTrack = t;
+        let matched = false;
+        try {
+          const q = `recording:"${t.name.replace(/"/g, '\\"')}" AND artist:"${t.artist.replace(/"/g, '\\"')}"`;
+          const url = `https://musicbrainz.org/ws/2/recording/?query=${encodeURIComponent(q)}&fmt=json&limit=1`;
+          const res = await fetch(url, {
+            headers: { Accept: "application/json" },
+          });
+          if (res.ok) {
+            const json = await res.json();
+            const rec = json?.recordings?.[0];
+            if (rec && typeof rec.score === "number" && rec.score >= 85) {
+              matched = true;
+              const newName = rec.title || t.name;
+              const newArtist = rec["artist-credit"]?.[0]?.name || t.artist;
+              const newAlbum = rec.releases?.[0]?.title || t.album;
+              nextTrack = {
+                ...t,
+                name: newName,
+                artist: newArtist,
+                album: newAlbum,
+              };
+            }
+          }
+        } catch {
+          // network/parse error — keep original silently
+        }
+
+        enriched.push(nextTrack);
+        if (!matched) {
+          notFound++;
+        } else if (
+          nextTrack.name === t.name &&
+          nextTrack.artist === t.artist &&
+          nextTrack.album === t.album
+        ) {
+          unchanged++;
+        } else {
+          updated++;
+          diffs.push({ before: t, after: nextTrack });
+        }
+
+        // Rate limit: 1 req/sec, skip after last
+        if (i < tracks.length - 1) {
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+      }
+
+      setEnrichState({
+        phase: "ready",
+        tracks: enriched,
+        playlistName: name,
+        updated,
+        unchanged,
+        notFound,
+        diffs,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Conversion failed");
     } finally {
@@ -289,9 +392,89 @@ const Convert = () => {
             />
           </div>
 
-          <Button onClick={onConvert} disabled={busy || !file} className="w-full">
-            {busy ? "Converting…" : "Convert"}
-          </Button>
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="enrich"
+              checked={enrich}
+              onCheckedChange={(v) => setEnrich(v === true)}
+              disabled={busy}
+              className="mt-0.5"
+            />
+            <label htmlFor="enrich" className="text-sm leading-5 cursor-pointer select-none">
+              Enrich metadata via MusicBrainz{" "}
+              <span className="text-muted-foreground">(improves Apple Music matching)</span>
+            </label>
+          </div>
+
+          {enrichState.phase === "enriching" ? (
+            <div className="space-y-2">
+              <Progress value={(enrichState.current / enrichState.total) * 100} />
+              <p className="text-sm text-muted-foreground">
+                Checking track {enrichState.current} of {enrichState.total} —{" "}
+                <span className="font-medium text-foreground">"{enrichState.trackName}"</span>
+              </p>
+            </div>
+          ) : enrichState.phase === "ready" ? (
+            <div className="space-y-4">
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                <p className="text-sm">
+                  <span className="font-semibold text-primary">{enrichState.updated}</span> tracks updated,{" "}
+                  <span className="font-semibold">{enrichState.unchanged}</span> already correct,{" "}
+                  <span className="font-semibold">{enrichState.notFound}</span> not found
+                </p>
+                {enrichState.diffs.length > 0 && (
+                  <Collapsible>
+                    <CollapsibleTrigger className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+                      <ChevronDown className="h-4 w-4" />
+                      Show changes ({enrichState.diffs.length})
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-3">
+                      <div className="rounded-md border bg-background overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Spotify</TableHead>
+                              <TableHead>MusicBrainz</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {enrichState.diffs.map((d, i) => (
+                              <TableRow key={i}>
+                                <TableCell className="align-top text-xs">
+                                  <div className="font-medium">{d.before.name}</div>
+                                  <div className="text-muted-foreground">{d.before.artist}</div>
+                                  <div className="text-muted-foreground italic">{d.before.album}</div>
+                                </TableCell>
+                                <TableCell className="align-top text-xs">
+                                  <div className="font-medium">{d.after.name}</div>
+                                  <div className="text-muted-foreground">{d.after.artist}</div>
+                                  <div className="text-muted-foreground italic">{d.after.album}</div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+              </div>
+              <Button
+                onClick={() => {
+                  downloadXml(enrichState.playlistName, enrichState.tracks);
+                  setSuccessCount(enrichState.tracks.length);
+                }}
+                className="w-full"
+              >
+                <Download className="h-4 w-4" />
+                Download XML
+              </Button>
+            </div>
+          ) : (
+            <Button onClick={onConvert} disabled={busy || !file} className="w-full">
+              {busy ? "Converting…" : "Convert"}
+            </Button>
+          )}
 
           {error && (
             <p className="text-sm text-destructive" role="alert">
