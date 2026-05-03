@@ -76,6 +76,14 @@ interface Track {
 }
 
 function buildXml(playlistName: string, tracks: Track[]): string {
+  return buildXmlWithOptions(playlistName, tracks, { includeAlbum: true });
+}
+
+function buildXmlWithOptions(
+  playlistName: string,
+  tracks: Track[],
+  options: { includeAlbum: boolean }
+): string {
   const now = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
 
   const trackDictEntries = tracks
@@ -85,7 +93,7 @@ function buildXml(playlistName: string, tracks: Track[]): string {
 \t\t\t<key>Track ID</key><integer>${t.id}</integer>
 \t\t\t<key>Name</key><string>${xmlEscape(t.name)}</string>
 \t\t\t<key>Artist</key><string>${xmlEscape(t.artist)}</string>
-\t\t\t<key>Album</key><string>${xmlEscape(t.album)}</string>
+${options.includeAlbum ? `\t\t\t<key>Album</key><string>${xmlEscape(t.album)}</string>\n` : ""}\
 \t\t\t<key>Total Time</key><integer>${t.durationMs}</integer>
 \t\t\t<key>Disc Number</key><integer>${t.discNumber}</integer>
 \t\t\t<key>Track Number</key><integer>${t.trackNumber}</integer>
