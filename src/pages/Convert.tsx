@@ -187,6 +187,7 @@ const Convert = () => {
   const [successCount, setSuccessCount] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [enrich, setEnrich] = useState(true);
+  const [includeAlbum, setIncludeAlbum] = useState(false);
   const [enrichState, setEnrichState] = useState<
     | { phase: "idle" }
     | { phase: "enriching"; current: number; total: number; trackName: string }
@@ -221,8 +222,8 @@ const Convert = () => {
     onPickFile(f);
   }, []);
 
-  const downloadXml = (name: string, tracks: Track[]) => {
-    const xml = buildXml(name, tracks);
+  const downloadXml = (name: string, tracks: Track[], withAlbum: boolean) => {
+    const xml = buildXml(name, tracks, { includeAlbum: withAlbum });
     const blob = new Blob([xml], { type: "application/xml" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -254,7 +255,7 @@ const Convert = () => {
       const name = playlistName.trim() || file.name.replace(/\.csv$/i, "");
 
       if (!enrich) {
-        downloadXml(name, tracks);
+        downloadXml(name, tracks, includeAlbum);
         setSuccessCount(tracks.length);
         setBusy(false);
         return;
@@ -465,7 +466,7 @@ const Convert = () => {
               </div>
               <Button
                 onClick={() => {
-                  downloadXml(enrichState.playlistName, enrichState.tracks);
+                  downloadXml(enrichState.playlistName, enrichState.tracks, includeAlbum);
                   setSuccessCount(enrichState.tracks.length);
                 }}
                 className="w-full"
