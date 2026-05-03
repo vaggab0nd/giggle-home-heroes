@@ -411,6 +411,22 @@ const Convert = () => {
             </label>
           </div>
 
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="include-album"
+              checked={includeAlbum}
+              onCheckedChange={(v) => setIncludeAlbum(v === true)}
+              disabled={busy}
+              className="mt-0.5"
+            />
+            <label htmlFor="include-album" className="text-sm leading-5 cursor-pointer select-none">
+              Include album in XML{" "}
+              <span className="text-muted-foreground">
+                (off by default — Apple Music matches more tracks on name + artist alone)
+              </span>
+            </label>
+          </div>
+
           {enrichState.phase === "enriching" ? (
             <div className="space-y-2">
               <Progress value={(enrichState.current / enrichState.total) * 100} />
