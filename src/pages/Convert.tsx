@@ -75,7 +75,11 @@ interface Track {
   trackNumber: number;
 }
 
-function buildXml(playlistName: string, tracks: Track[]): string {
+function buildXml(
+  playlistName: string,
+  tracks: Track[],
+  options: { includeAlbum: boolean } = { includeAlbum: true }
+): string {
   const now = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
 
   const trackDictEntries = tracks
@@ -85,7 +89,7 @@ function buildXml(playlistName: string, tracks: Track[]): string {
 \t\t\t<key>Track ID</key><integer>${t.id}</integer>
 \t\t\t<key>Name</key><string>${xmlEscape(t.name)}</string>
 \t\t\t<key>Artist</key><string>${xmlEscape(t.artist)}</string>
-\t\t\t<key>Album</key><string>${xmlEscape(t.album)}</string>
+${options.includeAlbum ? `\t\t\t<key>Album</key><string>${xmlEscape(t.album)}</string>\n` : ""}\
 \t\t\t<key>Total Time</key><integer>${t.durationMs}</integer>
 \t\t\t<key>Disc Number</key><integer>${t.discNumber}</integer>
 \t\t\t<key>Track Number</key><integer>${t.trackNumber}</integer>
@@ -183,6 +187,7 @@ const Convert = () => {
   const [successCount, setSuccessCount] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [enrich, setEnrich] = useState(true);
+  const [includeAlbum, setIncludeAlbum] = useState(false);
   const [enrichState, setEnrichState] = useState<
     | { phase: "idle" }
     | { phase: "enriching"; current: number; total: number; trackName: string }
@@ -217,8 +222,8 @@ const Convert = () => {
     onPickFile(f);
   }, []);
 
-  const downloadXml = (name: string, tracks: Track[]) => {
-    const xml = buildXml(name, tracks);
+  const downloadXml = (name: string, tracks: Track[], withAlbum: boolean) => {
+    const xml = buildXml(name, tracks, { includeAlbum: withAlbum });
     const blob = new Blob([xml], { type: "application/xml" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -250,7 +255,7 @@ const Convert = () => {
       const name = playlistName.trim() || file.name.replace(/\.csv$/i, "");
 
       if (!enrich) {
-        downloadXml(name, tracks);
+        downloadXml(name, tracks, includeAlbum);
         setSuccessCount(tracks.length);
         setBusy(false);
         return;
@@ -406,6 +411,22 @@ const Convert = () => {
             </label>
           </div>
 
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="include-album"
+              checked={includeAlbum}
+              onCheckedChange={(v) => setIncludeAlbum(v === true)}
+              disabled={busy}
+              className="mt-0.5"
+            />
+            <label htmlFor="include-album" className="text-sm leading-5 cursor-pointer select-none">
+              Include album in XML{" "}
+              <span className="text-muted-foreground">
+                (off by default — Apple Music matches more tracks on name + artist alone)
+              </span>
+            </label>
+          </div>
+
           {enrichState.phase === "enriching" ? (
             <div className="space-y-2">
               <Progress value={(enrichState.current / enrichState.total) * 100} />
@@ -461,7 +482,7 @@ const Convert = () => {
               </div>
               <Button
                 onClick={() => {
-                  downloadXml(enrichState.playlistName, enrichState.tracks);
+                  downloadXml(enrichState.playlistName, enrichState.tracks, includeAlbum);
                   setSuccessCount(enrichState.tracks.length);
                 }}
                 className="w-full"
