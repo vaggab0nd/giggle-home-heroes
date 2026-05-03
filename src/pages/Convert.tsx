@@ -75,14 +75,10 @@ interface Track {
   trackNumber: number;
 }
 
-function buildXml(playlistName: string, tracks: Track[]): string {
-  return buildXmlWithOptions(playlistName, tracks, { includeAlbum: true });
-}
-
-function buildXmlWithOptions(
+function buildXml(
   playlistName: string,
   tracks: Track[],
-  options: { includeAlbum: boolean }
+  options: { includeAlbum: boolean } = { includeAlbum: true }
 ): string {
   const now = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
 
